@@ -60,6 +60,9 @@ class Node(object):
 
 
 class Sample(object):
+    """
+    データ入力
+    """
 
     def __init__(self, name, features, label):
         self.name = name
@@ -71,6 +74,9 @@ class Sample(object):
 
 
 class Samples(list):
+    """
+    Sampleの集合．ラベルの確率とエントロピーを属性として追加
+    """
 
     _entropy = None
     _label_probability = None
@@ -132,16 +138,23 @@ def select_node(samples, candidates):
     best_node = None
     for (feature_name, value), used in candidates.iteritems():
         if used:
+            #使われた条件のノードは生成しない
             continue
         node = Node(feature_name, samples, value)
         if not max_ig or max_ig < node.information_gain:
             max_ig = node.information_gain
             best_node = node
+    #使ったやつは条件からはずす
     candidates[best_node.feature_name, best_node.threshold] = True
     return best_node
 
 
 def create_node_candidates(samples):
+    """
+    ノードの条件リストを生成する
+    :param samples:
+    :return:
+    """
     features = defaultdict(list)
     candidates = {}
     for sample in samples:
@@ -189,3 +202,4 @@ def run_by_iris():
         if result.get(sample.label, 0.0) == 1.0:
             correct_count += 1.0
     print correct_count/len(test_samples)
+    return node
