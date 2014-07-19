@@ -136,7 +136,7 @@ class DecisionTree(object):
         for feature_name, values in features.iteritems():
             values = list(set(values))
             values.sort()
-            for value in values:
+            for value in values[1:]:
                 candidates[(feature_name, value)] = False
         return candidates
 
