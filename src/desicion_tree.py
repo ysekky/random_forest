@@ -115,57 +115,65 @@ class Samples(list):
         return entropy
 
 
+class DecisionTree(object):
 
-def run(samples):
-    node_candidate = create_node_candidates(samples)
-    node = select_node(samples, node_candidate)
-    if not node:
-        return None
-    if node.left_samples.entropy != 0:
-        node.left_node = run(node.left_samples)
-    if node.right_samples.entropy != 0:
-        node.right_node = run(node.right_samples)
-    return node
+    def __init__(self, samples):
+        self.samples = samples
+        self.node_candidates = self.create_node_candidates()
+        self.root = self.run(self.samples)
+
+    def create_node_candidates(self):
+        """
+        ノードの条件リストを生成する
+        :param samples:
+        :return:
+        """
+        features = defaultdict(list)
+        candidates = {}
+        for sample in self.samples:
+            for feature_name, value in sample.features.iteritems():
+                features[feature_name].append(value)
+        for feature_name, values in features.iteritems():
+            values = list(set(values))
+            values.sort()
+            for value in values:
+                candidates[(feature_name, value)] = False
+        return candidates
+
+    def select_node(self, sample):
+        """
+        sampleのノードを作って一番いいのを得る
+        :param samples:
+        :return:
+        """
+        max_ig = None
+        best_node = None
+        for (feature_name, value), used in self.node_candidates.iteritems():
+            if used:
+                #使われた条件のノードは生成しない
+                continue
+            node = Node(feature_name, samples, value)
+            if not max_ig or max_ig < node.information_gain:
+                max_ig = node.information_gain
+                best_node = node
+        #使ったやつは条件からはずす
+        self.node_candidates[best_node.feature_name, best_node.threshold] = True
+        return best_node
 
 
-def select_node(samples, candidates):
-    """
-    sampleのノードを作って一番いいのを得る
-    :param samples:
-    :return:
-    """
-    max_ig = None
-    best_node = None
-    for (feature_name, value), used in candidates.iteritems():
-        if used:
-            #使われた条件のノードは生成しない
-            continue
-        node = Node(feature_name, samples, value)
-        if not max_ig or max_ig < node.information_gain:
-            max_ig = node.information_gain
-            best_node = node
-    #使ったやつは条件からはずす
-    candidates[best_node.feature_name, best_node.threshold] = True
-    return best_node
+    def run(self, sample):
+        node = self.select_node(sample)
+        if not node:
+            return None
+        if node.left_samples.entropy != 0:
+            node.left_node = self.run(node.left_samples)
+        if node.right_samples.entropy != 0:
+            node.right_node = self.run(node.right_samples)
+        return node
 
+    def predict(self, sample):
+        return self.root.predict(sample)
 
-def create_node_candidates(samples):
-    """
-    ノードの条件リストを生成する
-    :param samples:
-    :return:
-    """
-    features = defaultdict(list)
-    candidates = {}
-    for sample in samples:
-        for feature_name, value in sample.features.iteritems():
-            features[feature_name].append(value)
-    for feature_name, values in features.iteritems():
-        values = list(set(values))
-        values.sort()
-        for value in values:
-            candidates[(feature_name, value)] = False
-    return candidates
 
 
 def create_sample():
@@ -192,14 +200,13 @@ def create_iris_sample():
     return train_samples, test_sample
 
 
-
 def run_by_iris():
     train_samples, test_samples = create_iris_sample()
-    node = run(train_samples)
+    tree = DecisionTree(train_samples)
     correct_count = 0
     for sample in test_samples:
-        result = node.predict(sample)
+        result = tree.predict(sample)
         if result.get(sample.label, 0.0) == 1.0:
             correct_count += 1.0
     print correct_count/len(test_samples)
-    return node
+    return tree
