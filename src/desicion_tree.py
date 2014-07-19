@@ -140,7 +140,7 @@ class DecisionTree(object):
                 candidates[(feature_name, value)] = False
         return candidates
 
-    def select_node(self, sample):
+    def select_node(self, samples):
         """
         sampleのノードを作って一番いいのを得る
         :param samples:
