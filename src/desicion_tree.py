@@ -109,6 +109,7 @@ class Samples(list):
         return entropy
 
 
+
 def run(samples):
     node_candidate = create_node_candidates(samples)
     node = select_node(samples, node_candidate)
@@ -164,10 +165,27 @@ def create_sample():
 
 from sklearn import datasets
 
+
 def create_iris_sample():
     iris = datasets.load_iris()
-    samples = Samples()
+    train_samples = Samples()
+    test_sample = Samples()
     for index, data in enumerate(iris.data):
         features = {'q0': data[0], 'q1': data[1], 'q2': data[2], 'q3': data[3]}
-        samples.append(Sample(name=index, features=features, label=iris.target_names[iris.target[index]]))
-    return samples
+        if index % 2 == 0:
+            train_samples.append(Sample(name=index, features=features, label=iris.target_names[iris.target[index]]))
+        else:
+            test_sample.append(Sample(name=index, features=features, label=iris.target_names[iris.target[index]]))
+    return train_samples, test_sample
+
+
+
+def run_by_iris():
+    train_samples, test_samples = create_iris_sample()
+    node = run(train_samples)
+    correct_count = 0
+    for sample in test_samples:
+        result = node.predict(sample)
+        if result.get(sample.label, 0.0) == 1.0:
+            correct_count += 1.0
+    print correct_count/len(test_samples)
